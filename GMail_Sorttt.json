@@ -1,0 +1,1090 @@
+{
+  "name": "GMail Sorttt",
+  "nodes": [
+    {
+      "parameters": {
+        "text": "=# Email Text\n## Subject\n {{ $json.Subject }}\n\n## From\n{{ $json.From }}\n\n## Body\n{{ $json.snippet }}\n\n# Instructions\nPlease reply in JSON. No MD Json, but just json, your response must be EXCLUSIVELY JSON. Please include all categories. If not applicable, score a 0. \n\nALL SCORES ARE BETWEEN 0-1 ( WHERE 0 is not at all , and 1 is extremely so). Beware of scammers trying to 'convince' you its urgent. Really try to score between 0 and 1 , (float) \n\n",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"categories\": {\n\n    \"Business/Collaboration Inquiries\": {\n      \"Paid Partnerships/Endorsements\": 0.95,\n      \"Press/Media Requests\": 0.85,\n      \"Event Invitations\": 0.70,\n      \"Contractual/Legal\": 0.50\n    },\n    \"Fan Messages\": {\n      \"Praise/Appreciation\": 0.90,\n      \"Personal Stories\": 0.80,\n      \"Requests for Interaction\": 0.60,\n      \"Gift/Donation Offers\": 0.40\n    },\n    \"Support/Assistance Requests\": {\n      \"Customer Support\": 0.75,\n      \"Charity/Donation Requests\": 0.65,\n      \"Constituent/Casework\": 0.55\n    },\n    \"Personal/Private\": {\n      \"Family/Friends\": 0.95,\n      \"VIP/Important Contacts\": 0.88\n    },\n    \"Security/Threat\": {\n      \"Harassment/Hate/Threatening\": 0.10,\n      \"Suspicious Links or Attachments\": 0.05\n    },\n    \"Spam/Low Relevance\": {\n      \"Promotional/Cold Outreach\": 0.20,\n      \"Phishing or Scams\": 0.15\n    },\n    \"Other\": {\n      \"Undefined/Need Review\": 0.50\n    }\n  },\n\n  \"topics\": [\n    \"brand\",\n    \"sponsorship\",\n    \"media\",\n    \"event\",\n    \"legal\",\n    \"fan\",\n    \"support\",\n    \"charity\",\n    \"vip\",\n    \"threat\"\n  ],\n\n  \"spamScore\": 0.2,\n\n  \"isUrgent\": false,\n\n  \"urgencyScore\": 0.3\n}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1,
+      "position": [
+        880,
+        780
+      ],
+      "id": "a6afae67-b01f-4b7d-87cc-42d4260bae6e",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        920,
+        1000
+      ],
+      "id": "c2d43277-16fd-4f4a-b6fd-60d3e96d3990",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UvckaXZFAXVzxasT",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1480,
+        580
+      ],
+      "id": "f5242b58-86a8-4c7b-a9cf-6728d2a224c7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1ee7ead4-4932-486a-a9a6-3ea63f67c301",
+              "leftValue": "={{ $json.value }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1700,
+        580
+      ],
+      "id": "b42fc3e7-f4fa-481c-bee9-88df97cbdeca",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": []
+        },
+        "includeOtherFields": true,
+        "include": "except",
+        "excludeFields": "output.categories",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        880
+      ],
+      "id": "6faf9872-204a-4acc-bf14-f7e74e452b0f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.isUrgent }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "0a60b17f-0962-447f-9cb6-e8fcd19cb574"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Is Urgent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "03e78a72-2b5c-4915-96f4-136df52730fc",
+                    "leftValue": "={{ $json.output.spamScore }}",
+                    "rightValue": 0.3,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Is Spam"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2140,
+        880
+      ],
+      "id": "df536279-c67a-4f38-9832-990dc3717bbc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $item(\"0\").$node[\"Find Message By Id\"].json[\"id\"] }}",
+        "labelIds": "={{ $('Find Corresponding Id').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2360,
+        580
+      ],
+      "id": "a83e9ef3-5b1f-4e62-825f-696023648d7a",
+      "name": "Gmail",
+      "webhookId": "19c7126a-2eec-4a98-8ef6-82d6bf55be34",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        60
+      ],
+      "id": "2942e7fc-d648-4309-ae4b-bef45916008b",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "label"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        60
+      ],
+      "id": "de3199a0-3df0-4019-8fa0-722086854b8b",
+      "name": "Gmail1",
+      "webhookId": "238032fc-63bc-446d-bcff-b04e200ed216",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Static reference schema (leaf nodes)\nconst schema = {\n  \"Business/Collaboration Inquiries\": {\n    \"Paid Partnerships/Endorsements\": 0.95,\n    \"Press/Media Requests\": 0.85,\n    \"Event Invitations\": 0.70,\n    \"Contractual/Legal\": 0.50\n  },\n  \"Fan Messages\": {\n    \"Praise/Appreciation\": 0.90,\n    \"Personal Stories\": 0.80,\n    \"Requests for Interaction\": 0.60,\n    \"Gift/Donation Offers\": 0.40\n  },\n  \"Support/Assistance Requests\": {\n    \"Customer Support\": 0.75,\n    \"Charity/Donation Requests\": 0.65,\n    \"Constituent/Casework\": 0.55\n  },\n  \"Personal/Private\": {\n    \"Family/Friends\": 0.95,\n    \"VIP/Important Contacts\": 0.88\n  },\n  \"Security/Threat\": {\n    \"Harassment/Hate/Threatening\": 0.10,\n    \"Suspicious Links or Attachments\": 0.05\n  },\n  \"Spam/Low Relevance\": {\n    \"Promotional/Cold Outreach\": 0.20,\n    \"Phishing or Scams\": 0.15\n  },\n  \"Other\": {\n    \"Undefined/Need Review\": 0.50\n  },\n  \"Urgent\" : {\n    \"Really Urgent\" : 0.01\n  }\n};\n\n// Step 1: Extract all leaf labels from the schema\nconst allLeafLabels = [];\nfor (const parent in schema) {\n  for (const child in schema[parent]) {\n    allLeafLabels.push(child);\n  }\n}\n\n// Step 2: Flatten all existing labels from input array\nconst incomingItems = $input.all(); // n8n's input\n\nconst foundLabels = new Set();\n\nfor (const item of incomingItems) {\n  if (item.json.name) {\n      if (allLeafLabels.includes(item.json.name)) {\n        foundLabels.add(item.json.name)\n      }\n    }\n  }\n \n\n\n// Step 3: Find missing labels\nconst missingLabels = allLeafLabels.filter(label => !foundLabels.has(label));\n\n// Output\nreturn missingLabels.map(x => ({ label: x, value: false }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        100
+      ],
+      "id": "894b46a2-12c3-42d4-83ed-9bfb3f561579",
+      "name": "Find missing labels"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        60
+      ],
+      "id": "405208bc-fbc8-4c4d-902b-521e57829a07",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $json.label }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        60
+      ],
+      "id": "e1c06319-4555-4a86-beeb-89d8339de26c",
+      "name": "Gmail2",
+      "webhookId": "806e81f1-bf0a-4671-ba81-0e0f3f2e30b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        580
+      ],
+      "id": "a966a403-42ef-415b-8dc8-eb9359f44d86",
+      "name": "Get All Labels",
+      "webhookId": "f722e5ee-11d9-46b6-9875-f3ead675e489",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        980
+      ],
+      "id": "479c2fae-3cf6-4173-9ee2-2a1441bd9f56",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "from": "+12334556788",
+        "to": "+12334556788",
+        "message": "=Yo, important email:  {{ $('Find Message By Id').item.json.Subject }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sms77",
+      "typeVersion": 1,
+      "position": [
+        2380,
+        780
+      ],
+      "id": "4297a4ef-5cd1-4a9a-8893-9bd509112153",
+      "name": "seven"
+    },
+    {
+      "parameters": {
+        "jsCode": "function flattenObject(obj, parentKey = '') {\n  const result = {};\n\n  for (const key in obj) {\n    if (!obj.hasOwnProperty(key)) continue;\n    const newKey = parentKey ? `${parentKey}.${key}` : key;\n    const value = obj[key];\n\n    // Recursively handle nested objects\n    if (value && typeof value === 'object' && !Array.isArray(value)) {\n      Object.assign(result, flattenObject(value, newKey));\n    } else if (Array.isArray(value)) {\n      // Handle arrays with bracket notation\n      value.forEach((item, index) => {\n        if (item && typeof item === 'object' && !Array.isArray(item)) {\n          Object.assign(result, flattenObject(item, `${newKey}[${index}]`));\n        } else {\n          result[`${newKey}[${index}]`] = item;\n        }\n      });\n    } else {\n      // Base case\n      result[newKey] = value;\n    }\n  }\n\n  return result;\n}\n\n// Grab the 'output' object from the first node in n8n\nconst data = $input.first().json.output;\n\n// Flatten the object (or the first object in an array)\nlet flattened;\nif (Array.isArray(data)) {\n  flattened = flattenObject(data[0] || {});\n} else {\n  flattened = flattenObject(data);\n}\n\n// Filter to include only keys that start with 'categories'\nconst filteredEntries = Object.entries(flattened).filter(([key]) => key.startsWith('categories'));\n\n// Return one n8n item per { key, value } in the filtered object\nconst outputItems = filteredEntries.map(([key, value]) => ({\n  json: { key, value },\n}));\n\nreturn outputItems;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        580
+      ],
+      "id": "fe841ef3-4f33-40c9-b3a6-5bb4e275149e",
+      "name": "Flatten our schema"
+    },
+    {
+      "parameters": {
+        "jsCode": "function getIdByLabelName(labelList, targetName) {\n  const match = labelList.find(label => label.json.name === targetName);\n  return match ? match.json.id : -1;\n}\n\nconst allLabels = $(\"Get All Labels\").all()\nconst key = $('If').first().json.key\nconst dots = key.split(\".\")\nconst label = dots[dots.length-1]\nconst id = getIdByLabelName(allLabels, label)\nreturn {\n  json : {\n    key: label,\n    value: key,\n    id: id,\n  }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        580
+      ],
+      "id": "71f664d9-948c-4156-b400-cf5431274f93",
+      "name": "Find Corresponding Id"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        600
+      ],
+      "id": "ce5010b8-e7fa-4ed9-97bb-979b90ee8631",
+      "name": "Gmail Trigger1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q",
+          "mode": "list",
+          "cachedResultName": "Gmail cache",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.id }}",
+            "Status": "ready"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sizeEstimate",
+              "displayName": "sizeEstimate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "historyId",
+              "displayName": "historyId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "internalDate",
+              "displayName": "internalDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "labels",
+              "displayName": "labels",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        600
+      ],
+      "id": "24c6ec81-9531-4ae9-a8d8-e0a630196bae",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Sd6zqwoqgpjNWGoy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        780
+      ],
+      "id": "4cb27277-d291-4e59-82e5-cfc43c0ebf6f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q",
+          "mode": "list",
+          "cachedResultName": "Gmail cache",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        780
+      ],
+      "id": "9278433d-3521-4f52-89dc-7fea9e75aa60",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Sd6zqwoqgpjNWGoy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q",
+          "mode": "list",
+          "cachedResultName": "Gmail cache",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPXSSlSu10JxldBB-W8TpBEM14MUsyVxKc9NSAmn52Q/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.id }}",
+            "Status": "done"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sizeEstimate",
+              "displayName": "sizeEstimate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "historyId",
+              "displayName": "historyId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "internalDate",
+              "displayName": "internalDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "labels",
+              "displayName": "labels",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2640,
+        780
+      ],
+      "id": "9b51d603-18ad-4175-9623-a00492c0acec",
+      "name": "Google Sheets2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Sd6zqwoqgpjNWGoy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.ID }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        780
+      ],
+      "id": "2a028616-800c-4388-a7db-e5d582f69730",
+      "name": "Find Message By Id",
+      "webhookId": "09e4464b-0faa-4888-82a5-3d6fc5260ce3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lx3P9slZGkHyPJIY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "L A B E L S\n",
+        "height": 480,
+        "width": 1300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        60,
+        -60
+      ],
+      "typeVersion": 1,
+      "id": "c996934f-fb93-4804-a247-8554a2667275",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Flatten our schema",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get All Labels",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "seven",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail1": {
+      "main": [
+        [
+          {
+            "node": "Find missing labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find missing labels": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Gmail2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Labels": {
+      "main": [
+        [
+          {
+            "node": "Find Corresponding Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seven": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten our schema": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Corresponding Id": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Find Message By Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Message By Id": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ccb769a3-5dc1-4cd6-b0d6-9ccbff7ea6f3",
+  "meta": {
+    "instanceId": "753c0c5956074ced9dff70fefb08a3eaf1e1528ecb7c73f35fbd1eb70e42924d"
+  },
+  "id": "dym59UfSOZQLvke1",
+  "tags": []
+}
